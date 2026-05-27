@@ -1,28 +1,16 @@
-import { useState } from "react";
+// import { useState } from "react";
 // import { cn } from "@/lib/utils";
-
-import {
-  Home,
-  Calendar,
-  Stethoscope,
-  History,
-  LogOut,
-  X,
-  Menu,
-} from "lucide-react";
+import { NavLink } from "react-router-dom";
+import { Home, Calendar, Stethoscope, LogOut, X } from "lucide-react";
 import { cn } from "../../lib/util";
 
 const navItems = [
-  { icon: Home, label: "Dashboard", href: "#" },
-  { icon: Calendar, label: "Book Appointment", href: "#" },
-  { icon: Stethoscope, label: "Symptom Checker", href: "#" },
-  //   { icon: Calendar, label: "My Appointments", href: "#" },
-  //   { icon: History, label: "Medical History", href: "#" },
+  { icon: Home, label: "Dashboard", href: "/dashboard" },
+  { icon: Calendar, label: "Book Appointment", href: "/book-appointment" },
+  { icon: Stethoscope, label: "Symptom Checker", href: "/symptom-checker" },
 ];
 
 export function Sidebar({ isOpen, setIsOpen }) {
-  const [collapsed, setCollapsed] = useState(false);
-
   return (
     <>
       {/* Mobile backdrop */}
@@ -36,7 +24,7 @@ export function Sidebar({ isOpen, setIsOpen }) {
       {/* Sidebar */}
       <aside
         className={cn(
-          "fixed lg:static inset-y-0 left-0 z-50 w-64 bg-sidebar border-r border-sidebar-border transition-transform duration-300 ease-in-out lg:translate-x-0",
+          " lg:static inset-y-0 left-0 z-50 fixed w-64 bg-sidebar border-r border-sidebar-border transition-transform duration-300 ease-in-out lg:translate-x-0",
           isOpen ? "translate-x-0" : "-translate-x-full",
         )}>
         <div className="h-full flex flex-col">
@@ -68,19 +56,23 @@ export function Sidebar({ isOpen, setIsOpen }) {
           <nav className="flex-1 px-3 py-6 space-y-2">
             {navItems.map((item) => {
               const Icon = item.icon;
+
               return (
-                <a
+                <NavLink
                   key={item.label}
-                  href={item.href}
-                  className={cn(
-                    "flex items-center gap-3 px-4 py-3 rounded-lg transition-colors",
-                    item.label === "Dashboard"
-                      ? "bg-sidebar-primary text-sidebar-primary-foreground"
-                      : "text-sidebar-foreground hover:bg-sidebar-accent",
-                  )}>
+                  to={item.href}
+                  className={({ isActive }) =>
+                    cn(
+                      "flex items-center gap-3 px-4 py-3 rounded-lg transition-colors",
+                      isActive
+                        ? "bg-sidebar-primary text-sidebar-primary-foreground"
+                        : "text-sidebar-foreground hover:bg-sidebar-accent/50",
+                    )
+                  }>
                   <Icon className="w-5 h-5" />
+
                   <span className="font-medium">{item.label}</span>
-                </a>
+                </NavLink>
               );
             })}
           </nav>

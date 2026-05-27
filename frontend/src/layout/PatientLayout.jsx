@@ -2,22 +2,25 @@ import { Outlet } from "react-router-dom";
 import { useState } from "react";
 import { Sidebar } from "../components/Sidebar.jsx";
 import { Header } from "../components/Header.jsx";
+import { useIsMobile } from "../hooks/use-mobile.jsx";
 
 function PatientLayout() {
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const isMobile = useIsMobile();
+
+  const [isOpen, setIsOpen] = useState(!isMobile);
 
   return (
-    <div className="flex min-h-screen bg-slate-100">
+    <div className="flex h-screen overflow-hidden bg-slate-100">
       {/* Sidebar */}
-      <Sidebar isOpen={sidebarOpen} setIsOpen={setSidebarOpen} />
+      <Sidebar isOpen={isOpen} setIsOpen={setIsOpen} />
 
-      {/* Right Side (Header + Page Content) */}
-      <div className="flex flex-col flex-1">
+      {/* Right Side */}
+      <div className="flex flex-col flex-1 overflow-hidden">
         {/* Header */}
-        <Header onMenuClick={() => setSidebarOpen(!sidebarOpen)} />
+        <Header onMenuClick={() => setIsOpen(!isOpen)} />
 
-        {/* Page Content */}
-        <main className="flex-1 p-6 overflow-y-auto">
+        {/* Scrollable Content Only */}
+        <main className="flex-1 overflow-y-auto p-4">
           <Outlet />
         </main>
       </div>
