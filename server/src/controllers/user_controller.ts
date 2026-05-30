@@ -106,7 +106,7 @@ export async function Login(
       return HandleResponse(res, false, 404, "User not found");
     }
 
-    // ❌ not verified → block login
+    //  not verified → block login
     if (!user.verified) {
       const otpRecord = await db
         .select()
@@ -119,7 +119,7 @@ export async function Login(
       const secret = process.env.HMAC_VERIFICATION_CODE_SECRET!;
       const hashedOtp = hmacProcess(otp, secret);
 
-      // 🔁 if no record OR expired → resend new OTP
+      //  if no record OR expired → resend new OTP
       if (!record || new Date() > record.expiresAt) {
         const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
 
@@ -148,7 +148,7 @@ export async function Login(
         );
       }
 
-      // ⏳ OTP still valid
+      //  OTP still valid
       return HandleResponse(
         res,
         false,
@@ -157,14 +157,14 @@ export async function Login(
       );
     }
 
-    // 🔐 password check
+    //  password check
     const validPassword = await argon2.verify(user.password, password);
 
     if (!validPassword) {
       return HandleResponse(res, false, 400, "Invalid credentials");
     }
 
-    // 🎟️ generate token
+    //  generate token
     const token = jwt.sign(
       {
         id: user.id,
