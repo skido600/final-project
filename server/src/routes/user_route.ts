@@ -4,9 +4,9 @@ import {
   Signup,
   Login,
   ForgotPassword,
-  VerifyResetOtp,
   ResetPassword,
   VerifyEmail,
+  VerifyForgotPasswordOtp
 } from "../controllers/user_controller.ts";
 import { validate } from "../middleware/zodmiddleware.ts";
 import {
@@ -33,9 +33,13 @@ authroute.post(
 );
 
 // verify OTP code
-authroute.post("/verifycode", validate(verifyOtpSchema), VerifyResetOtp);
+authroute.post("/verifycode", validate(verifyOtpSchema), VerifyForgotPasswordOtp);
 // verify OTP code
 authroute.post("/verifyemail", validate(verifyOtpSchema), VerifyEmail);
+authroute.use((req, res, next) => {
+  console.log("AUTH ROUTE HIT:", req.method, req.url);
+  next();
+});
 // reset password
 authroute.put("/resetpassword", validate(resetPasswordSchema), ResetPassword);
 export default authroute;

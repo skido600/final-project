@@ -12,10 +12,10 @@ export const patients = pgTable("patients", {
   id: uuid("id").defaultRandom().primaryKey(),
   firstName: varchar("first_name", { length: 100 }).notNull(),
   surname: varchar("surname", { length: 100 }).notNull(),
-  age: integer("age").notNull(),
+  age: integer("age"),
   role: varchar("role", { length: 20 }).notNull().default("patient"),
-  sex: varchar("sex", { length: 10 }).notNull(), // Male | Female | Other
-  phone: varchar("phone", { length: 20 }).notNull(),
+  sex: varchar("sex", { length: 10 }), // Male | Female | Other
+  phone: varchar("phone", { length: 20 }),
   email: varchar("email", { length: 255 }).notNull().unique(),
   password: varchar("password", { length: 255 }).notNull(),
   verified: boolean("verified").default(false).notNull(),
@@ -28,9 +28,9 @@ export const otpTable = pgTable("otp_codes", {
   patientId: uuid("patient_id")
     .notNull()
     .references(() => patients.id),
-
+  used: boolean().default(false),
   otp: text("otp").notNull(),
-
+  type: text("type").notNull().default("verify_email"),
   expiresAt: timestamp("expires_at").notNull(),
 
   createdAt: timestamp("created_at").defaultNow(),

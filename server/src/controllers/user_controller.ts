@@ -1,19 +1,20 @@
-import { eq } from "drizzle-orm";
+
 import type { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
 import { db } from "../configs/db.ts";
-import { patients } from "../db/schema.ts";
+import { patients, otpTable } from "../db/schema.ts";
 import { HandleResponse } from "../util/response.ts";
 import type { PatientType } from "../types/index.ts";
 import argon2 from "argon2";
 import STMPservice from "../util/sendEmail.ts";
 import { Otpcode, hmacProcess } from "../util/generetaOtp.ts";
-import { otpTable } from "../db/schema.ts";
-export async function Signup(
-  req: Request,
-  res: Response,
-  next: NextFunction,
-): Promise<void> {
+import { eq, and, desc } from "drizzle-orm";
+import { config} from "dotenv"
+config()
+const OTP_TYPE_VERIFY = "verify_email";
+const OTP_TYPE_RESET = "reset_password";
+//  SIGNUP
+export async function Signup(req: Request, res: Response, next: NextFunction) {
   try {
     const {
       firstName,
@@ -27,23 +28,23 @@ export async function Signup(
 
     const normalizedEmail = email.toLowerCase();
 
-    const users = await db
+    const existing = await db
       .select()
       .from(patients)
       .where(eq(patients.email, normalizedEmail));
 
-    const user = users[0];
-
-    if (user) {
+    if (existing[0]) {
       return HandleResponse(res, false, 409, "User already exists");
     }
 
     const hashedPassword = await argon2.hash(password);
-
     const otp = Otpcode();
-    const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
+    const secret = process.env.HMAC_VERIFICATION_CODE_SECRET!;
+    const hashedOtp = hmacProcess(otp, secret);
 
-    const savedUsers = await db
+    const expiresAt = new Date(Date.now() + 5 * 60 * 1000);
+
+    const user = await db
       .insert(patients)
       .values({
         firstName,
@@ -57,80 +58,83 @@ export async function Signup(
       })
       .returning();
 
-    const savedUser = savedUsers[0];
+    const savedUser = user[0];
 
     if (!savedUser) {
-      return HandleResponse(res, false, 500, "Failed to create user");
+      return HandleResponse(res, false, 500, "User creation failed");
     }
 
-    const secret = process.env.HMAC_VERIFICATION_CODE_SECRET!;
-    const hashedCode = hmacProcess(otp, secret);
+    await db.delete(otpTable).where(eq(otpTable.patientId, savedUser.id));
 
     await db.insert(otpTable).values({
       patientId: savedUser.id,
-      otp: hashedCode,
+      otp: hashedOtp,
+      type: OTP_TYPE_VERIFY,
       expiresAt,
     });
 
-    await STMPservice.SendingOtp(firstName, surname, normalizedEmail, otp);
-
-    return HandleResponse(
-      res,
-      true,
-      201,
-      "Account created. OTP sent to email.",
+    await STMPservice.SendingOtp(
+      firstName,
+      surname,
+      normalizedEmail,
+      otp,
     );
+
+    return HandleResponse(res, true, 201, "Account created. OTP sent.");
   } catch (error) {
     next(error);
   }
 }
 
-export async function Login(
-  req: Request,
-  res: Response,
-  next: NextFunction,
-): Promise<void> {
+//  LOGIN
+export async function Login(req: Request, res: Response, next: NextFunction) {
   try {
     const { email, password } = req.body;
 
     const normalizedEmail = email.toLowerCase();
 
-    const users = await db
-      .select()
-      .from(patients)
-      .where(eq(patients.email, normalizedEmail));
-
-    const user = users[0];
+    const user = (
+      await db
+        .select()
+        .from(patients)
+        .where(eq(patients.email, normalizedEmail))
+    )[0];
 
     if (!user) {
       return HandleResponse(res, false, 404, "User not found");
     }
 
-    //  not verified → block login
+    // NOT VERIFIED → HANDLE OTP
     if (!user.verified) {
-      const otpRecord = await db
+      const record = await db
         .select()
         .from(otpTable)
-        .where(eq(otpTable.patientId, user.id));
+        .where(
+          and(
+            eq(otpTable.patientId, user.id),
+            eq(otpTable.type, OTP_TYPE_VERIFY),
+          ),
+        )
+        .orderBy(desc(otpTable.createdAt))
+        .limit(1);
 
-      const record = otpRecord[0];
+      const otpRecord = record[0];
 
-      const otp = Otpcode();
-      const secret = process.env.HMAC_VERIFICATION_CODE_SECRET!;
-      const hashedOtp = hmacProcess(otp, secret);
+      const expired =
+        !otpRecord || new Date(otpRecord.expiresAt).getTime() < Date.now();
 
-      //  if no record OR expired → resend new OTP
-      if (!record || new Date() > record.expiresAt) {
-        const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
+      if (expired) {
+        const otp = Otpcode();
+        const secret = process.env.HMAC_VERIFICATION_CODE_SECRET!;
+        const hashedOtp = hmacProcess(otp, secret);
 
-        // delete old OTP
         await db.delete(otpTable).where(eq(otpTable.patientId, user.id));
 
-        // save new OTP
         await db.insert(otpTable).values({
           patientId: user.id,
           otp: hashedOtp,
-          expiresAt,
+          type: OTP_TYPE_VERIFY,
+          expiresAt: new Date(Date.now() + 5 * 60 * 1000),
         });
 
         await STMPservice.SendingOtp(
@@ -140,31 +144,20 @@ export async function Login(
           otp,
         );
 
-        return HandleResponse(
-          res,
-          false,
-          403,
-          "Account not verified. New OTP sent to email.",
-        );
+        return HandleResponse(res, false, 403, "New OTP sent to email");
       }
 
-      //  OTP still valid
-      return HandleResponse(
-        res,
-        false,
-        403,
-        "Account not verified. Check your email and enter OTP.",
-      );
+      return HandleResponse(res, false, 403, "Account not verified check your email and input the otp to verify");
     }
 
-    //  password check
+    // PASSWORD CHECK
     const validPassword = await argon2.verify(user.password, password);
 
     if (!validPassword) {
       return HandleResponse(res, false, 400, "Invalid credentials");
     }
 
-    //  generate token
+    // TOKEN
     const token = jwt.sign(
       {
         id: user.id,
@@ -177,46 +170,37 @@ export async function Login(
       { expiresIn: "7d" },
     );
 
-    return HandleResponse(res, true, 200, "Login successful", {
-      token,
-    });
+    return HandleResponse(res, true, 200, "Login successful", { token });
   } catch (error) {
     next(error);
   }
 }
 
-export async function ForgotPassword(
-  req: Request,
-  res: Response,
-  next: NextFunction,
-): Promise<void> {
+//  FORGOT PASSWORD
+export async function ForgotPassword(req: Request, res: Response, next: NextFunction) {
   try {
     const { email } = req.body;
-
+console.log("ForgotPassword called");
     const normalizedEmail = email.toLowerCase();
 
-    const users = await db
-      .select()
-      .from(patients)
-      .where(eq(patients.email, normalizedEmail));
-
-    const user = users[0];
+    const user = (
+      await db.select().from(patients).where(eq(patients.email, normalizedEmail))
+    )[0];
 
     if (!user) {
       return HandleResponse(res, false, 404, "User not found");
     }
 
     const otp = Otpcode();
+    const hashedOtp = hmacProcess(otp, process.env.HMAC_VERIFICATION_CODE_SECRET!);
 
-    const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
-
-    const secret = process.env.HMAC_VERIFICATION_CODE_SECRET!;
-    const hashedOtp = hmacProcess(otp, secret);
+    await db.delete(otpTable).where(eq(otpTable.patientId, user.id));
 
     await db.insert(otpTable).values({
       patientId: user.id,
       otp: hashedOtp,
-      expiresAt,
+      type: OTP_TYPE_RESET,
+      expiresAt: new Date(Date.now() + 5 * 60 * 1000),
     });
 
     await STMPservice.SendingForgetPasswordOtp(
@@ -232,112 +216,58 @@ export async function ForgotPassword(
   }
 }
 
-export async function VerifyResetOtp(
-  req: Request,
-  res: Response,
-  next: NextFunction,
-) {
+//  VERIFY EMAIL OTP
+export async function VerifyEmail(req: Request, res: Response, next: NextFunction) {
   try {
     const { email, otp } = req.body;
 
     const normalizedEmail = email.toLowerCase();
 
-    const users = await db
-      .select()
-      .from(patients)
-      .where(eq(patients.email, normalizedEmail));
-
-    const user = users[0];
+    const user = (
+      await db.select().from(patients).where(eq(patients.email, normalizedEmail))
+    )[0];
 
     if (!user) {
       return HandleResponse(res, false, 404, "User not found");
     }
 
-    const otpRecord = await db
+    const record = await db
       .select()
       .from(otpTable)
-      .where(eq(otpTable.patientId, user.id));
+      .where(
+        and(
+          eq(otpTable.patientId, user.id),
+          eq(otpTable.type, OTP_TYPE_VERIFY),
+        ),
+      )
+      .orderBy(desc(otpTable.createdAt))
+      .limit(1);
 
-    const record = otpRecord[0];
+    const otpRecord = record[0];
 
-    if (!record) {
+    if (!otpRecord) {
       return HandleResponse(res, false, 404, "OTP not found");
     }
 
-    if (new Date() > record.expiresAt) {
+    // TIME CHECK (ONLY RELIABLE EXPIRY METHOD)
+    if (new Date(otpRecord.expiresAt).getTime() < Date.now()) {
       return HandleResponse(res, false, 400, "OTP expired");
     }
 
-    const secret = process.env.HMAC_VERIFICATION_CODE_SECRET!;
-    const hashedOtp = hmacProcess(otp, secret);
-
-    if (hashedOtp !== record.otp) {
-      return HandleResponse(res, false, 400, "Invalid OTP");
-    }
-
-    const resetToken = jwt.sign(
-      { id: user.id },
-      process.env.JWT_SECRET as string,
-      { expiresIn: "10m" },
+    const hashedOtp = hmacProcess(
+      otp,
+      process.env.HMAC_VERIFICATION_CODE_SECRET!,
     );
 
-    return HandleResponse(res, true, 200, "OTP verified", {
-      resetToken,
-    });
-  } catch (error) {
-    next(error);
-  }
-}
-export async function VerifyEmail(
-  req: Request,
-  res: Response,
-  next: NextFunction,
-) {
-  try {
-    const { email, otp } = req.body;
-
-    const normalizedEmail = email.toLowerCase();
-
-    const users = await db
-      .select()
-      .from(patients)
-      .where(eq(patients.email, normalizedEmail));
-
-    const user = users[0];
-
-    if (!user) {
-      return HandleResponse(res, false, 404, "User not found");
-    }
-
-    const otpRecord = await db
-      .select()
-      .from(otpTable)
-      .where(eq(otpTable.patientId, user.id));
-
-    const record = otpRecord[0];
-
-    if (!record) {
-      return HandleResponse(res, false, 404, "OTP not found");
-    }
-
-    if (new Date() > record.expiresAt) {
-      return HandleResponse(res, false, 400, "OTP expired");
-    }
-
-    const secret = process.env.HMAC_VERIFICATION_CODE_SECRET!;
-    const hashedOtp = hmacProcess(otp, secret);
-
-    if (hashedOtp !== record.otp) {
+    if (hashedOtp !== otpRecord.otp) {
       return HandleResponse(res, false, 400, "Invalid OTP");
     }
 
-    //  ACTIVATE USER HERE
     await db
       .update(patients)
       .set({ verified: true })
       .where(eq(patients.id, user.id));
 
-    // delete otp after success
     await db.delete(otpTable).where(eq(otpTable.patientId, user.id));
 
     return HandleResponse(res, true, 200, "Email verified successfully");
@@ -345,6 +275,84 @@ export async function VerifyEmail(
     next(error);
   }
 }
+
+export async function VerifyForgotPasswordOtp(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) {
+  try {
+    const { email, otp } = req.body;
+console.log("VerifyForgotPasswordOtp called");
+    const user = (
+      await db
+        .select()
+        .from(patients)
+        .where(eq(patients.email, email.toLowerCase()))
+    )[0];
+
+    if (!user) {
+      return HandleResponse(res, false, 404, "User not found");
+    }
+
+    const record = (
+      await db
+        .select()
+        .from(otpTable)
+        .where(
+          and(
+            eq(otpTable.patientId, user.id),
+            eq(otpTable.type, OTP_TYPE_RESET),
+          ),
+        )
+        .orderBy(desc(otpTable.createdAt))
+        .limit(1)
+    )[0];
+
+    if (!record) {
+      return HandleResponse(res, false, 404, "OTP not found");
+    }
+
+    if (new Date(record.expiresAt).getTime() < Date.now()) {
+      return HandleResponse(res, false, 400, "OTP expired");
+    }
+
+    const hashedOtp = hmacProcess(
+      otp,
+      process.env.HMAC_VERIFICATION_CODE_SECRET!,
+    );
+
+    if (hashedOtp !== record.otp) {
+      return HandleResponse(res, false, 400, "Invalid OTP");
+    }
+
+
+// const hashedOtp = hmacProcess(
+//   otp,
+//   process.env.HMAC_VERIFICATION_CODE_SECRET!,
+// );
+
+
+    const resetToken = jwt.sign(
+      { id: user.id },
+      process.env.JWT_SECRET!,
+      { expiresIn: "15m" },
+    );
+
+    await db.delete(otpTable).where(eq(otpTable.id, record.id));
+
+    return HandleResponse(
+      res,
+      true,
+      200,
+      "OTP verified",
+      { resetToken },
+    );
+  } catch (error) {
+    next(error);
+  }
+}
+//  RESET PASSWORD
 export async function ResetPassword(
   req: Request,
   res: Response,
@@ -353,30 +361,26 @@ export async function ResetPassword(
   try {
     const { resetToken, newPassword, confirmPassword } = req.body;
 
-    // 1. check passwords match
     if (newPassword !== confirmPassword) {
       return HandleResponse(res, false, 400, "Passwords do not match");
     }
 
-    // 2. verify token
-    const decoded = jwt.verify(
-      resetToken,
-      process.env.JWT_SECRET as string,
-    ) as any;
+    let decoded: any;
 
-    const userId = decoded.id;
+    try {
+      decoded = jwt.verify(resetToken, process.env.JWT_SECRET as string);
+    } catch {
+      return HandleResponse(res, false, 400, "Invalid or expired reset token");
+    }
 
-    // 3. hash password
     const hashedPassword = await argon2.hash(newPassword);
 
-    // 4. update password
     await db
       .update(patients)
       .set({ password: hashedPassword })
-      .where(eq(patients.id, userId));
+      .where(eq(patients.id, decoded.id));
 
-    // 5. delete OTPs
-    await db.delete(otpTable).where(eq(otpTable.patientId, userId));
+    await db.delete(otpTable).where(eq(otpTable.patientId, decoded.id));
 
     return HandleResponse(res, true, 200, "Password reset successful");
   } catch (error) {

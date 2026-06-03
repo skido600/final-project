@@ -64,6 +64,7 @@ export async function forgotPassword(email) {
   });
 
   const data = await res.json();
+console.log((data,"forgetpass"));
 
   if (!res.ok || !data.success) {
     throw new Error(data.message);
@@ -95,7 +96,7 @@ export async function verifyResetOtp(email, otp) {
 
 export async function resetPassword(resetToken, newPassword, confirmPassword) {
   const res = await fetch(`${API_URL}/api/auth/resetpassword`, {
-    method: "POST",
+    method: "PUT",
     headers: {
       "Content-Type": "application/json",
     },

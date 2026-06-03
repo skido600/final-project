@@ -7,8 +7,10 @@ import {
   LoginData,
   verifyResetOtp,
   resetPassword,
+  verifyOtp,
 } from "../util/auth";
 import { useState } from "react";
+import OtpModel from "./OtpModel";
 
 function Login() {
   const {
@@ -24,11 +26,24 @@ function Login() {
 
       toast.success(result.message);
 
-      console.log(result);
       reset();
-      // navigate("/dashboard");
     } catch (error) {
-      toast.error(error.message || "Login failed");
+      const message = error.message;
+
+      if (
+        message === "New OTP sent to email" ||
+        message ===
+          "Account not verified check your email and input the otp to verify"
+      ) {
+        setOtp(["", "", "", "", "", ""]);
+        setShowOtpModal(true);
+
+        toast.success(message);
+
+        return;
+      }
+
+      toast.error(message || "Login failed");
     }
   };
 
@@ -43,7 +58,36 @@ function Login() {
   const [sendingOtp, setSendingOtp] = useState(false);
   const [verifyingOtp, setVerifyingOtp] = useState(false);
   const [resettingPassword, setResettingPassword] = useState(false);
+
+  const [showOtpModal, setShowOtpModal] = useState(false);
+  const [loginEmail, setLoginEmail] = useState("");
+  const [verifying, setVerifying] = useState(false);
+  const [timeLeft] = useState(5);
+  const handleVerifyOtpLogin = async () => {
+    try {
+      setVerifying(true);
+
+      const code = otp.join("");
+
+      const result = await verifyOtp({
+        email: loginEmail,
+        otp: code,
+      });
+
+      toast.success(result.message);
+
+      setShowOtpModal(false);
+    } catch (error) {
+      toast.error(error.message);
+    } finally {
+      setVerifying(false);
+    }
+  };
   const handleSendOtp = async () => {
+    if (!email.trim()) {
+      toast.error("Email is required");
+      return;
+    }
     try {
       setSendingOtp(true);
 
@@ -59,6 +103,10 @@ function Login() {
     }
   };
   const handleVerifyOtp = async () => {
+    if (!otp.trim()) {
+      toast.error("OTP is required");
+      return;
+    }
     try {
       setVerifyingOtp(true);
 
@@ -76,6 +124,14 @@ function Login() {
     }
   };
   const handleResetPassword = async () => {
+    if (!newPassword.trim() || !confirmPassword.trim()) {
+      toast.error("Password fields cannot be empty");
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      toast.error("Passwords do not match");
+      return;
+    }
     try {
       setResettingPassword(true);
 
@@ -94,6 +150,23 @@ function Login() {
       toast.error(error.message);
     } finally {
       setResettingPassword(false);
+    }
+  };
+  const handleOtpKeyDown = (e, index) => {
+    if (e.key === "Backspace" && !otp[index] && index > 0) {
+      document.getElementById(`otp-${index - 1}`)?.focus();
+    }
+  };
+  const handleOtpChange = (value, index) => {
+    if (!/^\d*$/.test(value)) return;
+
+    const newOtp = [...otp];
+    newOtp[index] = value.slice(-1);
+    setOtp(newOtp);
+
+    // auto move next input
+    if (value && index < 5) {
+      document.getElementById(`otp-${index + 1}`)?.focus();
     }
   };
   return (
@@ -122,6 +195,7 @@ function Login() {
               <input
                 {...register("email", {
                   required: "Email is required",
+                  onChange: (e) => setLoginEmail(e.target.value),
                 })}
                 type="text"
                 placeholder="johndoe@gmail.com or +234..."
@@ -258,7 +332,7 @@ function Login() {
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   placeholder="Confirm Password"
-                  className="w-full border rounded-lg p-3"
+                  className="w-full border rounded-lg p-3 mt-4"
                 />
 
                 <button
@@ -271,6 +345,18 @@ function Login() {
             )}
           </div>
         </div>
+      )}
+
+      {showOtpModal && (
+        <OtpModel
+          otp={otp}
+          verifying={verifying}
+          timeLeft={timeLeft}
+          onChange={handleOtpChange}
+          onKeyDown={handleOtpKeyDown}
+          onVerify={handleVerifyOtpLogin}
+          onClose={() => setShowOtpModal(false)}
+        />
       )}
     </div>
   );
