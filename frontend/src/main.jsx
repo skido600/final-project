@@ -7,10 +7,13 @@ import Login from "./components/Login.jsx";
 import PatientLayout from "./layout/PatientLayout.jsx";
 import Appointments from "./pages/Appointments.jsx";
 import BookAppointment from "./pages/BookAppointment.jsx";
-import PatientDashboard from "./pages/PatientDashboard.jsx";
+// import PatientDashboard from "./pages/PatientDashboard.jsx";
 import SymptomChecker from "./pages/SymptomChecker.jsx";
 import Signup from "./components/Signup.jsx";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import RoleDashboard from "./pages/RoleDashboard.jsx";
 
+const queryClient = new QueryClient();
 const router = createBrowserRouter([
   {
     path: "/login",
@@ -25,7 +28,7 @@ const router = createBrowserRouter([
     children: [
       {
         path: "/dashboard",
-        element: <PatientDashboard />,
+        element: <RoleDashboard />,
       },
       {
         path: "/book-appointment",
@@ -44,8 +47,10 @@ const router = createBrowserRouter([
 ]);
 
 createRoot(document.getElementById("root")).render(
-  <StrictMode>
-    <Toaster position="top-right" />
-    <RouterProvider router={router} />
-  </StrictMode>,
+  <QueryClientProvider client={queryClient}>
+    <StrictMode>
+      <Toaster position="top-right" />
+      <RouterProvider router={router} />
+    </StrictMode>
+  </QueryClientProvider>,
 );

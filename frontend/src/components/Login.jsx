@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import { Mail, Lock } from "lucide-react";
 import toast from "react-hot-toast";
 import { useForm } from "react-hook-form";
+import { useNavigate } from "react-router-dom";
 import {
   forgotPassword,
   LoginData,
@@ -13,6 +14,7 @@ import { useState } from "react";
 import OtpModel from "./OtpModel";
 
 function Login() {
+  const navigate = useNavigate();
   const {
     register,
     handleSubmit,
@@ -23,9 +25,13 @@ function Login() {
   const onSubmit = async (data) => {
     try {
       const result = await LoginData(data);
+      const token = result?.data?.token;
 
-      toast.success(result.message);
-
+      localStorage.setItem("token", token);
+      toast.success("Login successful");
+      setTimeout(() => {
+        navigate("/dashboard");
+      }, 300);
       reset();
     } catch (error) {
       const message = error.message;

@@ -41,7 +41,9 @@ export const appointments = pgTable("appointments", {
   patientId: uuid("patient_id")
     .notNull()
     .references(() => patients.id),
-  doctorName: varchar("doctor_name", { length: 100 }).notNull(),
+  doctorId: uuid("doctor_id")
+    .notNull()
+    .references(() => patients.id),
   date: varchar("date", { length: 50 }).notNull(),
   time: varchar("time", { length: 50 }).notNull(),
   symptoms: text("symptoms"),

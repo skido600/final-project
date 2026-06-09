@@ -1,4 +1,3 @@
-
 import type { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
 import { db } from "../configs/db.ts";
@@ -8,9 +7,9 @@ import type { PatientType } from "../types/index.ts";
 import argon2 from "argon2";
 import STMPservice from "../util/sendEmail.ts";
 import { Otpcode, hmacProcess } from "../util/generetaOtp.ts";
-import { eq, and, desc } from "drizzle-orm";
-import { config} from "dotenv"
-config()
+import { eq, and, desc, or } from "drizzle-orm";
+import { config } from "dotenv";
+config();
 const OTP_TYPE_VERIFY = "verify_email";
 const OTP_TYPE_RESET = "reset_password";
 //  SIGNUP
@@ -73,12 +72,7 @@ export async function Signup(req: Request, res: Response, next: NextFunction) {
       expiresAt,
     });
 
-    await STMPservice.SendingOtp(
-      firstName,
-      surname,
-      normalizedEmail,
-      otp,
-    );
+    await STMPservice.SendingOtp(firstName, surname, normalizedEmail, otp);
 
     return HandleResponse(res, true, 201, "Account created. OTP sent.");
   } catch (error) {
@@ -92,13 +86,24 @@ export async function Login(req: Request, res: Response, next: NextFunction) {
     const { email, password } = req.body;
 
     const normalizedEmail = email.toLowerCase();
+    let user;
 
-    const user = (
-      await db
-        .select()
-        .from(patients)
-        .where(eq(patients.email, normalizedEmail))
-    )[0];
+    // detect email or phone
+    if (normalizedEmail.includes("@")) {
+      user = (
+        await db
+          .select()
+          .from(patients)
+          .where(eq(patients.email, normalizedEmail.toLowerCase()))
+      )[0];
+    } else {
+      user = (
+        await db
+          .select()
+          .from(patients)
+          .where(eq(patients.phone, normalizedEmail.trim()))
+      )[0];
+    }
 
     if (!user) {
       return HandleResponse(res, false, 404, "User not found");
@@ -147,7 +152,12 @@ export async function Login(req: Request, res: Response, next: NextFunction) {
         return HandleResponse(res, false, 403, "New OTP sent to email");
       }
 
-      return HandleResponse(res, false, 403, "Account not verified check your email and input the otp to verify");
+      return HandleResponse(
+        res,
+        false,
+        403,
+        "Account not verified check your email and input the otp to verify",
+      );
     }
 
     // PASSWORD CHECK
@@ -177,14 +187,21 @@ export async function Login(req: Request, res: Response, next: NextFunction) {
 }
 
 //  FORGOT PASSWORD
-export async function ForgotPassword(req: Request, res: Response, next: NextFunction) {
+export async function ForgotPassword(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) {
   try {
     const { email } = req.body;
-console.log("ForgotPassword called");
+    console.log("ForgotPassword called");
     const normalizedEmail = email.toLowerCase();
 
     const user = (
-      await db.select().from(patients).where(eq(patients.email, normalizedEmail))
+      await db
+        .select()
+        .from(patients)
+        .where(eq(patients.email, normalizedEmail))
     )[0];
 
     if (!user) {
@@ -192,7 +209,10 @@ console.log("ForgotPassword called");
     }
 
     const otp = Otpcode();
-    const hashedOtp = hmacProcess(otp, process.env.HMAC_VERIFICATION_CODE_SECRET!);
+    const hashedOtp = hmacProcess(
+      otp,
+      process.env.HMAC_VERIFICATION_CODE_SECRET!,
+    );
 
     await db.delete(otpTable).where(eq(otpTable.patientId, user.id));
 
@@ -217,14 +237,21 @@ console.log("ForgotPassword called");
 }
 
 //  VERIFY EMAIL OTP
-export async function VerifyEmail(req: Request, res: Response, next: NextFunction) {
+export async function VerifyEmail(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) {
   try {
     const { email, otp } = req.body;
 
     const normalizedEmail = email.toLowerCase();
 
     const user = (
-      await db.select().from(patients).where(eq(patients.email, normalizedEmail))
+      await db
+        .select()
+        .from(patients)
+        .where(eq(patients.email, normalizedEmail))
     )[0];
 
     if (!user) {
@@ -283,7 +310,7 @@ export async function VerifyForgotPasswordOtp(
 ) {
   try {
     const { email, otp } = req.body;
-console.log("VerifyForgotPasswordOtp called");
+    console.log("VerifyForgotPasswordOtp called");
     const user = (
       await db
         .select()
@@ -326,28 +353,18 @@ console.log("VerifyForgotPasswordOtp called");
       return HandleResponse(res, false, 400, "Invalid OTP");
     }
 
+    // const hashedOtp = hmacProcess(
+    //   otp,
+    //   process.env.HMAC_VERIFICATION_CODE_SECRET!,
+    // );
 
-// const hashedOtp = hmacProcess(
-//   otp,
-//   process.env.HMAC_VERIFICATION_CODE_SECRET!,
-// );
-
-
-    const resetToken = jwt.sign(
-      { id: user.id },
-      process.env.JWT_SECRET!,
-      { expiresIn: "15m" },
-    );
+    const resetToken = jwt.sign({ id: user.id }, process.env.JWT_SECRET!, {
+      expiresIn: "15m",
+    });
 
     await db.delete(otpTable).where(eq(otpTable.id, record.id));
 
-    return HandleResponse(
-      res,
-      true,
-      200,
-      "OTP verified",
-      { resetToken },
-    );
+    return HandleResponse(res, true, 200, "OTP verified", { resetToken });
   } catch (error) {
     next(error);
   }

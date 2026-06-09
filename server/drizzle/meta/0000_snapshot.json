@@ -1,5 +1,5 @@
 {
-  "id": "c365136e-5506-4b76-b57c-8e5dca10cb4f",
+  "id": "ee3c630b-e167-44f5-8cec-3bdeed627dbf",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -86,9 +86,9 @@
           "primaryKey": false,
           "notNull": true
         },
-        "doctor_name": {
-          "name": "doctor_name",
-          "type": "varchar(100)",
+        "doctor_id": {
+          "name": "doctor_id",
+          "type": "uuid",
           "primaryKey": false,
           "notNull": true
         },
@@ -133,6 +133,19 @@
           "tableTo": "patients",
           "columnsFrom": [
             "patient_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "appointments_doctor_id_patients_id_fk": {
+          "name": "appointments_doctor_id_patients_id_fk",
+          "tableFrom": "appointments",
+          "tableTo": "patients",
+          "columnsFrom": [
+            "doctor_id"
           ],
           "columnsTo": [
             "id"
@@ -229,11 +242,25 @@
           "primaryKey": false,
           "notNull": true
         },
+        "used": {
+          "name": "used",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": false,
+          "default": false
+        },
         "otp": {
           "name": "otp",
           "type": "text",
           "primaryKey": false,
           "notNull": true
+        },
+        "type": {
+          "name": "type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'verify_email'"
         },
         "expires_at": {
           "name": "expires_at",
@@ -298,19 +325,26 @@
           "name": "age",
           "type": "integer",
           "primaryKey": false,
-          "notNull": true
+          "notNull": false
+        },
+        "role": {
+          "name": "role",
+          "type": "varchar(20)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'patient'"
         },
         "sex": {
           "name": "sex",
           "type": "varchar(10)",
           "primaryKey": false,
-          "notNull": true
+          "notNull": false
         },
         "phone": {
           "name": "phone",
           "type": "varchar(20)",
           "primaryKey": false,
-          "notNull": true
+          "notNull": false
         },
         "email": {
           "name": "email",

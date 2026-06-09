@@ -1,49 +1,102 @@
-import {
+import { Stethoscope, Clock } from "lucide-react";
 
-  Stethoscope,
-  Clock,
-
-  Handshake,
-} from "lucide-react";
+import { useState } from "react";
+import { formatDateTime } from "../util/createdAt";
+import { Signature, BanknoteX } from "lucide-react";
+import { formatAppointment } from "../util/formatedateTime";
+import { usePatientDashboard } from "../hooks/usePatientDashboard";
+import AIhistory from "../components/AIhistory";
+import ProfileWelcome from "../components/ProfileWelcome";
 
 function PatientDashboard() {
-  const patientName = "Leo";
+  const [openId, setOpenId] = useState(null);
 
+  const { history, stats, historyLoading, statsLoading } =
+    usePatientDashboard();
+
+  const toggle = (id) => {
+    setOpenId(openId === id ? null : id);
+  };
+
+  if (historyLoading || statsLoading) {
+    return (
+      <div className="space-y-6 animate-pulse">
+        {/* ===== WELCOME SECTION ===== */}
+        <div className="bg-white rounded p-4 border border-slate-200">
+          <div className="h-6 w-48 bg-slate-200 rounded mb-2" />
+          <div className="h-4 w-80 bg-slate-200 rounded" />
+        </div>
+
+        {/* ===== STATS SECTION ===== */}
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-5">
+          {[1, 2].map((i) => (
+            <div
+              key={i}
+              className="bg-white rounded p-5 border border-slate-200">
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="h-3 w-20 bg-slate-200 rounded mb-3" />
+                  <div className="h-6 w-12 bg-slate-200 rounded" />
+                </div>
+
+                <div className="w-12 h-12 bg-slate-200 rounded-xl" />
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* ===== HISTORY SECTION ===== */}
+        <div className="bg-white rounded p-6 border border-slate-200">
+          <div className="h-6 w-40 bg-slate-200 rounded mb-4" />
+
+          {[1, 2, 3].map((i) => (
+            <div
+              key={i}
+              className="mt-5 p-5 rounded-xl bg-slate-50 border border-slate-200">
+              {/* top row */}
+              <div className="flex justify-between">
+                <div>
+                  <div className="h-4 w-32 bg-slate-200 rounded mb-2" />
+                  <div className="h-3 w-24 bg-slate-200 rounded" />
+                </div>
+
+                <div className="h-4 w-20 bg-slate-200 rounded" />
+              </div>
+
+              {/* status */}
+              <div className="h-3 w-24 bg-slate-200 rounded mt-3" />
+            </div>
+          ))}
+        </div>
+
+        {/* ===== AI SECTION ===== */}
+        <div className="bg-white rounded-2xl p-6 border border-slate-200">
+          <div className="h-6 w-60 bg-slate-200 rounded mb-4" />
+
+          <div className="p-5 rounded-xl bg-slate-100 border border-slate-200">
+            <div className="h-3 w-full bg-slate-200 rounded mb-2" />
+            <div className="h-3 w-5/6 bg-slate-200 rounded mb-2" />
+            <div className="h-3 w-4/6 bg-slate-200 rounded" />
+          </div>
+        </div>
+      </div>
+    );
+  }
   return (
     <div className="space-y-6">
       {/* Welcome Section */}
-      <div className="bg-white rounded p-4  border border-slate-200">
-        <h1 className="text-xl flex items-center font-bold text-slate-800">
-          Welcome back, {patientName} <Handshake className="text-" />
-        </h1>
-
-        <p className="text-slate-500 text-sm mt-2">
-          Manage your appointments, symptoms, and health records easily.
-        </p>
-      </div>
+      <ProfileWelcome />
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-5">
-        {/* <div className="bg-white rounded p-5  border border-slate-200">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-slate-500 text-sm">Appointments</p>
-
-              <h2 className="text-3xl font-bold mt-2 text-slate-800">4</h2>
-            </div>
-
-            <div className="w-12 h-12 rounded-xl bg-blue-100 flex items-center justify-center">
-              <Calendar className="text-blue-600" />
-            </div>
-          </div>
-        </div> */}
-
         <div className="bg-white rounded p-5  border border-slate-200">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-slate-500 text-sm">AI Checks</p>
 
-              <h2 className="text-xl font-bold mt-2 text-slate-800">2</h2>
+              <h2 className="text-xl font-bold mt-2 text-slate-800">
+                {statsLoading ? "..." : stats?.totalAiChecks}
+              </h2>
             </div>
 
             <div className="w-12 h-12 rounded-xl bg-green-100 flex items-center justify-center">
@@ -57,7 +110,9 @@ function PatientDashboard() {
             <div>
               <p className="text-slate-500 text-sm">Pending Visits</p>
 
-              <h2 className="text-xl font-bold mt-2 text-slate-800">1</h2>
+              <h2 className="text-xl font-bold mt-2 text-slate-800">
+                {statsLoading ? "..." : stats?.pendingAppointments}
+              </h2>
             </div>
 
             <div className="w-12 h-12 rounded-xl bg-orange-100 flex items-center justify-center">
@@ -71,49 +126,77 @@ function PatientDashboard() {
       <div className="bg-white rounded p-6  border border-slate-200">
         <div className="flex items-center justify-between">
           <h2 className="text-xl font-semibold text-slate-800">
-            Upcoming Appointment
+            Appointment History
           </h2>
         </div>
 
-        <div className="mt-5 p-5 rounded-xl bg-slate-50 border border-slate-200">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-            <div>
-              <h3 className="font-semibold text-slate-800">Dr. John Doe</h3>
+        {history.length === 0 ? (
+          <p className="text-slate-500 mt-4">No appointment history</p>
+        ) : (
+          history.map((item) => {
+            const isOpen = openId === item.id;
 
-              <p className="text-slate-500 mt-1">General Physician</p>
-            </div>
+            return (
+              <div
+                key={item.id}
+                className="mt-5 p-5 rounded-xl bg-slate-50 border border-slate-200 cursor-pointer"
+                onClick={() => toggle(item.id)}>
+                {/* MAIN VIEW (UNCHANGED UI STYLE) */}
+                <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                  <div>
+                    <h3 className="font-semibold text-slate-800">
+                      Dr. {item.doctorFirstName} {item.doctorSurname}
+                    </h3>
 
-            <div>
-              <p className="text-slate-700 font-medium">May 25, 2026</p>
+                    <p className="text-slate-500 mt-1">General Physician</p>
+                  </div>
 
-              <p className="text-slate-500 text-sm">10:00 AM</p>
-            </div>
-          </div>
-        </div>
+                  <div>
+                    <p className="text-slate-700 font-medium text-sm mb-2">
+                      {formatAppointment(item.date, item.time)}
+                    </p>
+                  </div>
+                </div>
+
+                {/* DROPDOWN (only shows on click) */}
+                {isOpen && (
+                  <div className="mt-4 border-t pt-3 text-sm text-slate-600 space-y-1">
+                    {item.status === "rejected" && (
+                      <p className="text-red-600 flex gap-2 items-center font-medium">
+                        <BanknoteX size={14} /> Your appointment was rejected by
+                        the doctor.
+                      </p>
+                    )}
+
+                    {item.status === "cancelled" && (
+                      <p className="text-gray-500 font-medium opacity-70">
+                        ⚠️ Your appointment has been cancelled by Dr.{" "}
+                        {item.doctorFirstName}.
+                      </p>
+                    )}
+
+                    {item.status === "accepted" && (
+                      <p className="text-green-600  gap-2 flex items-center font-medium">
+                        <Signature size={14} /> Your appointment has been
+                        scheduled successfully.
+                      </p>
+                    )}
+                    <p>
+                      <b>Symptoms:</b> {item.symptoms}
+                    </p>
+                    <p>
+                      <b>Booked On:</b> {formatDateTime(item.createdAt)}
+                    </p>
+                  </div>
+                )}
+              </div>
+            );
+          })
+        )}
       </div>
 
       {/* AI Suggestion */}
-      <div className="bg-white rounded-2xl p-6  border border-slate-200">
-        <h2 className="text-xl font-semibold text-slate-800">
-          Recent AI Health Suggestion
-        </h2>
-
-        <div className="mt-4 p-5 rounded-xl bg-green-50 border border-green-200">
-          <p className="text-slate-700">
-            Based on your last symptoms, possible conditions may include:
-          </p>
-
-          <ul className="mt-3 list-disc list-inside text-slate-600">
-            <li>Malaria</li>
-            <li>Flu</li>
-          </ul>
-
-          <p className="mt-4 text-sm text-slate-500">
-            This AI suggestion is not a final diagnosis. Please consult a
-            doctor.
-          </p>
-        </div>
-      </div>
+      <AIhistory />
     </div>
   );
 }

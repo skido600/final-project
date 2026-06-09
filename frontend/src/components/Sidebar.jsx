@@ -3,14 +3,25 @@
 import { NavLink } from "react-router-dom";
 import { Home, Calendar, Stethoscope, LogOut, X } from "lucide-react";
 import { cn } from "../../lib/util";
+import { getUserRole } from "../util/decode";
 
-const navItems = [
+const patientNav = [
   { icon: Home, label: "Dashboard", href: "/dashboard" },
   { icon: Calendar, label: "Book Appointment", href: "/book-appointment" },
   { icon: Stethoscope, label: "Symptom Checker", href: "/symptom-checker" },
 ];
+const doctorNav = [
+  // { icon: Calendar, label: "My Appointments", href: "/doctor/appointments" },
+  { icon: Home, label: "Dashboard", href: "/dashboard" },
+  // { icon: Stethoscope, label: "Patient Records", href: "/patients" },
+];
+const adminNav = [{ icon: Home, label: "Dashboard", href: "/dashboard" }];
 
 export function Sidebar({ isOpen, setIsOpen }) {
+  const role = getUserRole()?.role;
+
+  const navItems =
+    role === "admin" ? adminNav : role === "doctor" ? doctorNav : patientNav;
   return (
     <>
       {/* Mobile backdrop */}
