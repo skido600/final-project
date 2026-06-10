@@ -4,6 +4,7 @@ import { HandleError, notFound } from "./middleware/ErroHandling.ts";
 import authroute from "./routes/user_route.ts";
 import cors from "cors";
 import doctorroute from "./routes/doctor_route.ts";
+import symptomroute from "./routes/symptom.ts";
 
 config();
 const server = express();
@@ -16,6 +17,7 @@ server.use(
 server.use(express.json());
 server.use("/api/auth", authroute);
 server.use("/api/doctor", doctorroute);
+server.use("/api/ai", symptomroute);
 server.use(HandleError);
 
 server.use(notFound);
