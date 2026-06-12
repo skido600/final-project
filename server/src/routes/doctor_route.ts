@@ -47,47 +47,47 @@ doctorroute.get(
   GetMyAppointments,
 );
 
-doctorroute.get("/doctors", verifyToken, GetDoctors);
+doctorroute.get("/doctors", verifyToken, AllowRoles("patient"), GetDoctors);
 doctorroute.get("/doctor-appointments", verifyToken, GetDoctorAppointments);
 
 doctorroute.patch(
   "/appointments/:appointmentId/accept",
   verifyToken,
-  //   AllowRoles("doctor"),
+  AllowRoles("doctor"),
   AcceptAppointment,
 );
 
 doctorroute.patch(
   "/appointments/:appointmentId/reject",
   verifyToken,
-  //   AllowRoles("doctor"),
+  AllowRoles("doctor"),
   RejectAppointment,
 );
 
 doctorroute.patch(
   "/appointments/:appointmentId/cancel",
   verifyToken,
-  //   AllowRoles("doctor"),
+  AllowRoles("doctor"),
   CancelAppointment,
 );
 
 doctorroute.get(
   "/patient-stat",
   verifyToken,
-  //   AllowRoles("doctor"),
+  AllowRoles("patient"),
   GetPatientDashboardStats,
 );
 doctorroute.get(
   "/patient-history",
   verifyToken,
-  //   AllowRoles("doctor"),
+  AllowRoles("patient"),
   GetPatientAppointmentHistory,
 );
 
 doctorroute.get(
   "/profile",
   verifyToken,
-  //   AllowRoles("doctor"),
+  AllowRoles("doctor", "admin", "patient"),
   GetDoctorProfile,
 );
 export default doctorroute;
