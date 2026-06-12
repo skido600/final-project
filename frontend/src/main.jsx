@@ -5,13 +5,14 @@ import "./index.css";
 import { Toaster } from "react-hot-toast";
 import Login from "./components/Login.jsx";
 import PatientLayout from "./layout/PatientLayout.jsx";
-import Appointments from "./pages/Appointments.jsx";
+
 import BookAppointment from "./pages/BookAppointment.jsx";
-// import PatientDashboard from "./pages/PatientDashboard.jsx";
+
 import SymptomChecker from "./pages/SymptomChecker.jsx";
 import Signup from "./components/Signup.jsx";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import RoleDashboard from "./pages/RoleDashboard.jsx";
+import ProtectedRoute from "../helper/protectedRoute.jsx";
 
 const queryClient = new QueryClient();
 const router = createBrowserRouter([
@@ -23,24 +24,26 @@ const router = createBrowserRouter([
     path: "/signup",
     element: <Signup />,
   },
+
   {
-    element: <PatientLayout />,
+    element: <ProtectedRoute />,
     children: [
       {
-        path: "/dashboard",
-        element: <RoleDashboard />,
-      },
-      {
-        path: "/book-appointment",
-        element: <BookAppointment />,
-      },
-      {
-        path: "/symptom-checker",
-        element: <SymptomChecker />,
-      },
-      {
-        path: "/appointments",
-        element: <Appointments />,
+        element: <PatientLayout />,
+        children: [
+          {
+            path: "/dashboard",
+            element: <RoleDashboard />,
+          },
+          {
+            path: "/book-appointment",
+            element: <BookAppointment />,
+          },
+          {
+            path: "/symptom-checker",
+            element: <SymptomChecker />,
+          },
+        ],
       },
     ],
   },

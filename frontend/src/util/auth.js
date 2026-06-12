@@ -303,3 +303,80 @@ export const getDoctorProfile = async () => {
 
   return data;
 };
+
+export const Aichecker = async (symptoms) => {
+  const token = getToken();
+
+  const res = await fetch(`${API_URL}/api/ai/symptom`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({
+      symptoms,
+    }),
+  });
+
+  const data = await res.json();
+
+  if (!res.ok || !data.success) {
+    throw new Error(data.message || "Failed to fetch doctor profile");
+  }
+
+  return data;
+};
+
+export const getAIHistory = async () => {
+  const token = getToken();
+
+  const res = await fetch(`${API_URL}/api/ai/history`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  const data = await res.json();
+
+  if (!res.ok) {
+    throw new Error(data.message || "Failed to fetch history");
+  }
+
+  return data.data;
+};
+
+export const deleteAIHistory = async (id) => {
+  const token = getToken();
+
+  const res = await fetch(`${API_URL}/api/ai/history/${id}`, {
+    method: "DELETE",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  const data = await res.json();
+
+  if (!res.ok) {
+    throw new Error(data.message || "Failed to delete history");
+  }
+};
+
+export const clearAIHistory = async () => {
+  const token = getToken();
+
+  const res = await fetch(`${API_URL}/api/ai/history`, {
+    method: "DELETE",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  const data = await res.json();
+
+  if (!res.ok) {
+    throw new Error(data.message || "Failed to clear history");
+  }
+
+  return data;
+};

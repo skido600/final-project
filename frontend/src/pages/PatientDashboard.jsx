@@ -7,17 +7,30 @@ import { formatAppointment } from "../util/formatedateTime";
 import { usePatientDashboard } from "../hooks/usePatientDashboard";
 import AIhistory from "../components/AIhistory";
 import ProfileWelcome from "../components/ProfileWelcome";
-
+import { statusConfig } from "../util/ststus";
+// statusConfig
 function PatientDashboard() {
   const [openId, setOpenId] = useState(null);
 
   const { history, stats, historyLoading, statsLoading } =
     usePatientDashboard();
-
+  console.log("history check", history);
   const toggle = (id) => {
     setOpenId(openId === id ? null : id);
   };
+  function StatusBadge({ status }) {
+    const config = statusConfig[status] || {
+      label: status,
+      className: "bg-slate-100 text-slate-600",
+    };
 
+    return (
+      <span
+        className={`px-3 py-1 rounded-full text-xs border ${config.className}`}>
+        {config.label}
+      </span>
+    );
+  }
   if (historyLoading || statsLoading) {
     return (
       <div className="space-y-6 animate-pulse">
@@ -157,7 +170,7 @@ function PatientDashboard() {
                     </p>
                   </div>
                 </div>
-
+                <StatusBadge status={item.status} />
                 {/* DROPDOWN (only shows on click) */}
                 {isOpen && (
                   <div className="mt-4 border-t pt-3 text-sm text-slate-600 space-y-1">

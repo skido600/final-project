@@ -1,10 +1,10 @@
-// import { useState } from "react";
-// import { cn } from "@/lib/utils";
 import { NavLink } from "react-router-dom";
 import { Home, Calendar, Stethoscope, LogOut, X } from "lucide-react";
 import { cn } from "../../lib/util";
 import { getUserRole } from "../util/decode";
 
+import { logout } from "../util/logout";
+import toast from "react-hot-toast";
 const patientNav = [
   { icon: Home, label: "Dashboard", href: "/dashboard" },
   { icon: Calendar, label: "Book Appointment", href: "/book-appointment" },
@@ -19,7 +19,11 @@ const adminNav = [{ icon: Home, label: "Dashboard", href: "/dashboard" }];
 
 export function Sidebar({ isOpen, setIsOpen }) {
   const role = getUserRole()?.role;
+  const handleLogout = () => {
+    logout();
 
+    toast.success("Logged out successfully");
+  };
   const navItems =
     role === "admin" ? adminNav : role === "doctor" ? doctorNav : patientNav;
   return (
@@ -90,7 +94,9 @@ export function Sidebar({ isOpen, setIsOpen }) {
 
           {/* Logout */}
           <div className="p-3 border-t border-sidebar-border">
-            <button className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sidebar-foreground hover:bg-sidebar-accent transition-colors">
+            <button
+              onClick={handleLogout}
+              className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sidebar-foreground hover:bg-sidebar-accent transition-colors">
               <LogOut className="w-5 h-5" />
               <span className="font-medium">Logout</span>
             </button>
