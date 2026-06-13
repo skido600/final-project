@@ -22,7 +22,7 @@ server.use("/api/auth", authroute);
 server.use("/api/doctor", doctorroute);
 server.use("/api/ai", symptomroute);
 
-server.get("/health", (req: Request, res: Response) => {
+server.get("/health", (_req: Request, res: Response) => {
   return res.json({ message: "Server is healthy!" });
 });
 server.use(HandleError);

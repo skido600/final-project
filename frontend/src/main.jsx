@@ -13,9 +13,11 @@ import Signup from "./components/Signup.jsx";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import RoleDashboard from "./pages/RoleDashboard.jsx";
 import ProtectedRoute from "../helper/protectedRoute.jsx";
+import LandingPage from "./components/LandingPage.jsx";
 
 const queryClient = new QueryClient();
 const router = createBrowserRouter([
+  { path: "/", element: <LandingPage /> },
   {
     path: "/login",
     element: <Login />,
