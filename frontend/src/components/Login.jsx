@@ -69,6 +69,8 @@ function Login() {
   const [loginEmail, setLoginEmail] = useState("");
   const [verifying, setVerifying] = useState(false);
   const [timeLeft] = useState(5);
+
+  console.log("url check", import.meta.env.VITE_API_URL);
   const handleVerifyOtpLogin = async () => {
     try {
       setVerifying(true);
