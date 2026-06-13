@@ -12,7 +12,7 @@ server.use(
   cors({
     origin: [
       "http://localhost:5173",
-      "https://final-project-ewsz.onrender.com",
+      "https://final-project-drab-eight.vercel.app",
     ],
     credentials: true,
   }),
