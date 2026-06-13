@@ -10,7 +10,10 @@ config();
 const server = express();
 server.use(
   cors({
-    origin: "http://localhost:5173",
+    origin: [
+      "http://localhost:5173",
+      "https://final-project-ewsz.onrender.com",
+    ],
     credentials: true,
   }),
 );
