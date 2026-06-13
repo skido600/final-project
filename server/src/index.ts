@@ -8,20 +8,12 @@ import symptomroute from "./routes/symptom.ts";
 import type { Request, Response } from "express";
 config();
 const server = express();
-const allowedOrigins = [
-  "http://localhost:5173",
-  "https://final-project-drab-eight.vercel.app",
-];
+
 server.use(
   cors({
-    origin: function (origin, callback) {
-      if (!origin || allowedOrigins.includes(origin)) {
-        callback(null, true);
-      } else {
-        callback(new Error("Not allowed by CORS"));
-      }
-    },
-    credentials: true,
+    origin: "*",
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
   }),
 );
 server.use(express.json());

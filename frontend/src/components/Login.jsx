@@ -86,6 +86,7 @@ function Login() {
 
       setShowOtpModal(false);
     } catch (error) {
+      console.log(error);
       toast.error(error.message);
     } finally {
       setVerifying(false);
