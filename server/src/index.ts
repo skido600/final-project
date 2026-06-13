@@ -11,9 +11,10 @@ const server = express();
 
 server.use(
   cors({
-    origin: "*",
-    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization"],
+    origin: function (origin, callback) {
+      callback(null, true);
+    },
+    credentials: true,
   }),
 );
 server.use(express.json());
@@ -27,6 +28,11 @@ server.get("/health", (_req: Request, res: Response) => {
 server.use(HandleError);
 
 server.use(notFound);
+
+server.use((req, res, next) => {
+  console.log("REQUEST HIT:", req.method, req.url);
+  next();
+});
 server.listen(process.env.PORT, () => {
   console.log(`server running on port  ${process.env.PORT}`);
 });
