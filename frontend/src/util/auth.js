@@ -32,7 +32,7 @@ export async function LoginData(dataMain) {
   });
 
   const data = await res.json();
-  console.log("login data check", data);
+  console.log("login data check", res);
   if (!res.ok || !data.success) {
     throw new Error(data.message || "Verification failed");
   }
