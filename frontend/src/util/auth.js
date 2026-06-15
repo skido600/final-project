@@ -8,7 +8,7 @@ export async function SignupData(dataMain) {
     headers: {
       "Content-Type": "application/json",
     },
-    credentials: "include",
+
     body: JSON.stringify(dataMain),
   });
 
@@ -27,7 +27,7 @@ export async function LoginData(dataMain) {
     headers: {
       "Content-Type": "application/json",
     },
-    credentials: "include",
+
     body: JSON.stringify(dataMain),
   });
 

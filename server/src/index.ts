@@ -11,10 +11,12 @@ const server = express();
 
 server.use(
   cors({
-    origin: function (origin, callback) {
-      callback(null, true);
-    },
-    credentials: true,
+    origin: [
+      "http://localhost:5173",
+      "https://final-project-drab-eight.vercel.app",
+    ],
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
   }),
 );
 server.use(express.json());
