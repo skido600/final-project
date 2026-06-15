@@ -65,7 +65,7 @@ export async function Signup(req: Request, res: Response, next: NextFunction) {
 
     await db.delete(otpTable).where(eq(otpTable.patientId, savedUser.id));
 
-    await db.insert(otpTable).values({
+    const emailResult = await db.insert(otpTable).values({
       patientId: savedUser.id,
       otp: hashedOtp,
       type: OTP_TYPE_VERIFY,
@@ -73,7 +73,7 @@ export async function Signup(req: Request, res: Response, next: NextFunction) {
     });
 
     await STMPservice.SendingOtp(firstName, surname, normalizedEmail, otp);
-
+    console.log("Signup email result:", emailResult);
     return HandleResponse(res, true, 201, "Account created. OTP sent.");
   } catch (error) {
     next(error);
@@ -107,6 +107,12 @@ export async function Login(req: Request, res: Response, next: NextFunction) {
 
     if (!user) {
       return HandleResponse(res, false, 404, "User not found");
+    }
+
+    const validPassword = await argon2.verify(user.password, password);
+
+    if (!validPassword) {
+      return HandleResponse(res, false, 400, "Invalid credentials");
     }
 
     // NOT VERIFIED → HANDLE OTP
@@ -161,11 +167,6 @@ export async function Login(req: Request, res: Response, next: NextFunction) {
     }
 
     // PASSWORD CHECK
-    const validPassword = await argon2.verify(user.password, password);
-
-    if (!validPassword) {
-      return HandleResponse(res, false, 400, "Invalid credentials");
-    }
 
     // TOKEN
     const token = jwt.sign(

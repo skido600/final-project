@@ -2,9 +2,10 @@ import { User, Mail, VenusAndMars } from "lucide-react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import toast from "react-hot-toast";
+import { CreateDoctorApi } from "../util/auth";
 
 // you will create this API
-import { createDoctor } from "../util/auth";
+// import { createDoctor } from "../util/auth";
 
 function CreateDoctor() {
   const queryClient = useQueryClient();
@@ -17,7 +18,7 @@ function CreateDoctor() {
   } = useForm();
 
   const mutation = useMutation({
-    mutationFn: createDoctor,
+    mutationFn: CreateDoctorApi,
     onSuccess: () => {
       toast.success("Doctor created successfully");
       reset();

@@ -26,8 +26,9 @@ function Signup() {
       toast.success(result.message);
 
       setEmail(data.email);
+      setOtp(["", "", "", "", "", ""]);
       setShowOtp(true);
-      reset()
+      reset();
     } catch (error) {
       console.error(error);
       toast.error(error.message || "Something went wrong");
@@ -65,7 +66,7 @@ function Signup() {
       });
 
       toast.success(result.message);
-
+      setOtp(["", "", "", "", "", ""]);
       setShowOtp(false);
     } catch (error) {
       toast.error(error.message);

@@ -1,7 +1,14 @@
-// import React from "react";
+import CreateDoctor from "../components/CreateDoctor";
+import ProfileWelcome from "../components/ProfileWelcome";
 
 function AdminDashboard() {
-  return <div>AdminDashboard</div>;
+  return (
+    <>
+      {" "}
+      <ProfileWelcome />
+      <CreateDoctor />
+    </>
+  );
 }
 
 export default AdminDashboard;

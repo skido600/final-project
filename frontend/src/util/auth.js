@@ -32,9 +32,11 @@ export async function LoginData(dataMain) {
   });
 
   const data = await res.json();
-  console.log("login data check", res);
+  console.log("login data check", data);
   if (!res.ok || !data.success) {
-    throw new Error(data.message || "Verification failed");
+    throw new Error(
+      data.error?.message || data.message || "Verification failed",
+    );
   }
 
   return data;
@@ -376,6 +378,27 @@ export const clearAIHistory = async () => {
 
   if (!res.ok) {
     throw new Error(data.message || "Failed to clear history");
+  }
+
+  return data;
+};
+
+export const CreateDoctorApi = async (data_create) => {
+  const token = getToken();
+
+  const res = await fetch(`${API_URL}/api/doctor/createdoctor`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(data_create),
+  });
+
+  const data = await res.json();
+
+  if (!res.ok || !data.success) {
+    throw new Error(data.message || "Failed to fetch doctor profile");
   }
 
   return data;
