@@ -1,6 +1,6 @@
 "use client";
 
-import { Menu, Bell, User } from "lucide-react";
+import { Menu, User } from "lucide-react";
 
 export function Header({ onMenuClick }) {
   return (

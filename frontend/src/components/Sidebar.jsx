@@ -20,9 +20,10 @@ const adminNav = [{ icon: Home, label: "Dashboard", href: "/dashboard" }];
 export function Sidebar({ isOpen, setIsOpen }) {
   const role = getUserRole()?.role;
   const handleLogout = () => {
+    toast.success("Logout successful");
     logout();
 
-    toast.success("Logged out successfully");
+    // toast.success("Logged out successfully");
   };
   const navItems =
     role === "admin" ? adminNav : role === "doctor" ? doctorNav : patientNav;
