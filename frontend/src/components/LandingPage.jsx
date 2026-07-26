@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { Stethoscope, Brain, Calendar, Shield } from "lucide-react";
+import Footest from "./Footest";
 
 function LandingPage() {
   return (
@@ -79,9 +80,7 @@ function LandingPage() {
       </div>
 
       {/* FOOTER */}
-      <div className="text-center py-6 text-slate-500 text-sm">
-        © {new Date().getFullYear()} MediCare AI. Built with React + Node.js
-      </div>
+      <Footest />
     </div>
   );
 }

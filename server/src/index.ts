@@ -19,6 +19,10 @@ server.use(
     allowedHeaders: ["Content-Type", "Authorization"],
   }),
 );
+server.use((req, res, next) => {
+  console.log("REQUEST HIT:", req.method, req.url);
+  next();
+});
 server.use(express.json());
 server.use("/api/auth", authroute);
 server.use("/api/doctor", doctorroute);
@@ -31,10 +35,6 @@ server.use(HandleError);
 
 server.use(notFound);
 
-server.use((req, res, next) => {
-  console.log("REQUEST HIT:", req.method, req.url);
-  next();
-});
 server.listen(process.env.PORT, () => {
   console.log(`server running on port  ${process.env.PORT}`);
 });

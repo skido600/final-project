@@ -3,6 +3,7 @@ import { useState } from "react";
 import { Sidebar } from "../components/Sidebar.jsx";
 import { Header } from "../components/Header.jsx";
 import { useIsMobile } from "../hooks/use-mobile.jsx";
+import Footest from "../components/Footest.jsx";
 
 function PatientLayout() {
   const isMobile = useIsMobile();
@@ -23,6 +24,7 @@ function PatientLayout() {
         <main className="flex-1 overflow-y-auto p-4">
           <Outlet />
         </main>
+        <Footest />
       </div>
     </div>
   );

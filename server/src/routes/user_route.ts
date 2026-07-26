@@ -6,7 +6,7 @@ import {
   ForgotPassword,
   ResetPassword,
   VerifyEmail,
-  VerifyForgotPasswordOtp
+  VerifyForgotPasswordOtp,
 } from "../controllers/user_controller.ts";
 import { validate } from "../middleware/zodmiddleware.ts";
 import {
@@ -33,7 +33,11 @@ authroute.post(
 );
 
 // verify OTP code
-authroute.post("/verifycode", validate(verifyOtpSchema), VerifyForgotPasswordOtp);
+authroute.post(
+  "/verifycode",
+  validate(verifyOtpSchema),
+  VerifyForgotPasswordOtp,
+);
 // verify OTP code
 authroute.post("/verifyemail", validate(verifyOtpSchema), VerifyEmail);
 authroute.use((req, res, next) => {

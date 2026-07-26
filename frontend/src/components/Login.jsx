@@ -120,8 +120,8 @@ function Login() {
       setVerifyingOtp(true);
 
       const result = await verifyResetOtp(email, otp);
-
-      setResetToken(result.resetToken);
+      console.log("result from forgetpass", result.data);
+      setResetToken(result.data.resetToken);
 
       toast.success("OTP verified");
 
@@ -144,7 +144,11 @@ function Login() {
     try {
       setResettingPassword(true);
 
-      const result = await resetPassword(resetToken, newPassword);
+      const result = await resetPassword(
+        resetToken,
+        newPassword,
+        confirmPassword,
+      );
 
       toast.success(result.message);
 

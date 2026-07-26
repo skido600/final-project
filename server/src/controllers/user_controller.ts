@@ -378,7 +378,14 @@ export async function ResetPassword(
 ) {
   try {
     const { resetToken, newPassword, confirmPassword } = req.body;
-
+    console.log(
+      {
+        resetToken,
+        newPassword,
+        confirmPassword,
+      },
+      "backend",
+    );
     if (newPassword !== confirmPassword) {
       return HandleResponse(res, false, 400, "Passwords do not match");
     }
